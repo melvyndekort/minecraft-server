@@ -72,7 +72,6 @@ resource "aws_ecs_task_definition" "minecraft" {
         { name = "EULA", value = "TRUE" },
         { name = "TYPE", value = "PAPER" },
         { name = "VERSION", value = var.paper_version },
-        { name = "FORCE_REDOWNLOAD", value = "TRUE" },
         { name = "SERVER_NAME", value = "MelvynMC" },
         { name = "MOTD", value = "Melvyn's MC Server" },
         { name = "SERVER_IP", value = "0.0.0.0" },
