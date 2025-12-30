@@ -173,18 +173,15 @@ ec2_key_name = "your-key-pair-name"
 
 To upload files to the EFS filesystem, enable a temporary EC2 instance:
 
-```hcl
-# In terraform/terraform.tfvars
-create_temp_ec2 = true
-ec2_key_name = "your-key-name"
-```
-
 ```bash
-terraform apply
-terraform output temp_ec2_ssh_command  # Get SSH command
+# Create temporary EC2 instance
+make temp-ec2
+
+# SSH to the instance
+make ssh
 ```
 
-EFS is mounted at `/mnt/efs`. Set `create_temp_ec2 = false` when done.
+EFS is mounted at `/mnt/efs`. When done, destroy the temporary instance with `make apply`.
 
 ## 🔧 Container Access
 

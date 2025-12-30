@@ -1,4 +1,4 @@
-.PHONY := clean_secrets decrypt encrypt exec test lint format type-check coverage dev-all
+.PHONY := clean_secrets decrypt encrypt exec ssh test lint format type-check coverage dev-all
 
 # Development commands (using uv)
 test:
@@ -19,7 +19,7 @@ type-check:
 dev-all: format lint type-check test
 
 # AWS-related commands require session
-decrypt encrypt exec: check-aws
+decrypt encrypt exec ssh temp-ec2: check-aws
 
 check-aws:
 ifndef AWS_SESSION_TOKEN
@@ -57,3 +57,13 @@ exec:
 		--container minecraft \
 		--interactive \
 		--command "/bin/bash"
+
+temp-ec2:
+	cd terraform && terraform apply -var="create_temp_ec2=true"
+
+ssh: check-aws
+	@echo "EFS filesystem is mounted at: /mnt/efs"
+	@cd terraform && ssh ec2-user@$$(terraform output -raw temp_ec2_ip)
+
+apply:
+	cd terraform && terraform apply

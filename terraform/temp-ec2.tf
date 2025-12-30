@@ -12,7 +12,3 @@ module "temp_ec2" {
 output "temp_ec2_ip" {
   value = length(module.temp_ec2) > 0 ? module.temp_ec2[0].public_ip : null
 }
-
-output "temp_ec2_ssh_command" {
-  value = length(module.temp_ec2) > 0 ? module.temp_ec2[0].ssh_command : null
-}
