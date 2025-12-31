@@ -193,6 +193,23 @@ make exec
 
 This opens an interactive shell in the Minecraft container. The server must be running first.
 
+## 🎮 Server Management
+
+You can manage the Minecraft server directly via command line:
+
+```bash
+# Start the server
+make start
+
+# Stop the server
+make stop
+
+# Restart the server (force new deployment)
+make restart
+```
+
+These commands provide an alternative to Discord bot commands for server management.
+
 ## 🛠️ Development
 
 ### Discord Bot Development

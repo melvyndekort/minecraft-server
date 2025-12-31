@@ -19,7 +19,7 @@ type-check:
 dev-all: format lint type-check test
 
 # AWS-related commands require session
-decrypt encrypt exec ssh temp-ec2: check-aws
+decrypt encrypt exec ssh temp-ec2 start stop restart: check-aws
 
 check-aws:
 ifndef AWS_SESSION_TOKEN
@@ -67,3 +67,30 @@ ssh: check-aws
 
 apply:
 	cd terraform && terraform apply
+
+start:
+	@aws ecs update-service \
+		--cluster minecraft-cluster \
+		--service minecraft-service \
+		--desired-count 1 \
+		--output text \
+		--query 'service.serviceName'
+	@echo "Starting Minecraft server..."
+
+stop:
+	@aws ecs update-service \
+		--cluster minecraft-cluster \
+		--service minecraft-service \
+		--desired-count 0 \
+		--output text \
+		--query 'service.serviceName'
+	@echo "Stopping Minecraft server..."
+
+restart:
+	@aws ecs update-service \
+		--cluster minecraft-cluster \
+		--service minecraft-service \
+		--force-new-deployment \
+		--output text \
+		--query 'service.serviceName'
+	@echo "Restarting Minecraft server..."
