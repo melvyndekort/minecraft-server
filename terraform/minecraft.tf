@@ -183,6 +183,12 @@ resource "aws_ecs_service" "minecraft" {
   }
 
   depends_on = [aws_efs_mount_target.minecraft]
+
+  lifecycle {
+    ignore_changes = [
+      desired_count
+    ]
+  }
 }
 
 resource "aws_cloudwatch_log_group" "minecraft" {
