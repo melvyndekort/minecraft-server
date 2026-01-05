@@ -12,9 +12,9 @@ resource "random_string" "random_password" {
 locals {
   minecraft_service_name = "minecraft-service"
   plugins = [
-    "https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsX-2.22.0-dev+49-000e6c5.jar",
-    "https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXSpawn-2.22.0-dev+49-000e6c5.jar",
-    "https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXChat-2.22.0-dev+49-000e6c5.jar",
+    "https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsX-2.22.0-dev+53-9ad754b.jar",
+    "https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXSpawn-2.22.0-dev+53-9ad754b.jar",
+    "https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXChat-2.22.0-dev+53-9ad754b.jar",
     "https://cdn.modrinth.com/data/fALzjamp/versions/P3y2MXnd/Chunky-Bukkit-1.4.40.jar",
     "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot",
     "https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot",
