@@ -35,6 +35,16 @@ class TestIdleWatcher:
         assert count == 0
 
     @patch("minecraft_tools.idle_watcher.main.MCRcon")
+    def test_get_player_count_with_color_codes(self, mock_mcrcon):
+        """Test player count with Minecraft color codes."""
+        mock_mcr = MagicMock()
+        mock_mcr.command.return_value = "There are §c0§6 of a max of 20 players online:"
+        mock_mcrcon.return_value.__enter__.return_value = mock_mcr
+
+        count = get_player_count("localhost", 25575, "password")
+        assert count == 0
+
+    @patch("minecraft_tools.idle_watcher.main.MCRcon")
     def test_get_player_count_connection_error(self, mock_mcrcon):
         """Test player count when connection fails."""
         mock_mcrcon.side_effect = Exception("Connection refused")

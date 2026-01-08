@@ -28,7 +28,11 @@ def get_player_count(host: str, port: int, password: str = "") -> int:
             if "There are" in response:
                 parts = response.split()
                 if len(parts) >= 3:
-                    return int(parts[2])
+                    # Strip Minecraft color codes (§ followed by any character)
+                    player_count_str = parts[2]
+                    import re
+                    clean_count = re.sub(r'§.', '', player_count_str)
+                    return int(clean_count)
         return 0
     except Exception as e:
         logger.warning(f"Failed to get player count: {e}")
