@@ -37,7 +37,7 @@ jobs:
           aws-region: eu-west-1
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
 
       - name: Cache Terraform
         uses: actions/cache@v5
