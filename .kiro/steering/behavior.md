@@ -31,7 +31,7 @@ Each has its own Dockerfile in `docker/`, its own workflow, and its own GHCR ima
 
 ## Linting
 
-This repo uses `ruff` (not pylint) and `mypy` for type checking, configured in `pyproject.toml`. Also has `.pre-commit-config.yaml`.
+This repo uses `ruff` + `mypy` for type checking. Pylint should also be added for deep analysis for type checking, configured in `pyproject.toml`. Also has `.pre-commit-config.yaml`.
 
 ## Terraform Details
 
