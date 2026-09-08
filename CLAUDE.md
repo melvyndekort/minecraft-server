@@ -37,6 +37,8 @@ This repo uses `ruff` + `mypy` for type checking. Pylint should also be added fo
 
 - Backend: S3 in `mdekort-tfstate-075673041815`
 - Secrets: KMS context `target=tf-minecraft`
+- **Still in the management account.** Priority 1 subaccount migration
+  candidate — see `~/.claude/references/subaccount-migration.md`.
 
 ## MCP servers
 
