@@ -1,6 +1,6 @@
 # minecraft-server
 
-> For global standards, way-of-workings, and pre-commit checklist, see `~/.kiro/steering/behavior.md`
+> For global standards, way-of-workings, and pre-commit checklist, see `~/.claude/CLAUDE.md`
 
 ## Role
 
@@ -37,6 +37,10 @@ This repo uses `ruff` + `mypy` for type checking. Pylint should also be added fo
 
 - Backend: S3 in `mdekort-tfstate-075673041815`
 - Secrets: KMS context `target=tf-minecraft`
+
+## MCP servers
+
+This repo has a project-scoped `cloudflare` MCP server (`.mcp.json`) — see `~/.claude/references/mcp-catalog.md`.
 
 ## Related Repositories
 
