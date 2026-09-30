@@ -8,16 +8,26 @@ Python developer and AWS engineer.
 
 ## What This Does
 
-Minecraft server on AWS ECS (Fargate) with three sidecar components: Discord bot for remote management, DNS updater for dynamic IP, and idle watcher for auto-shutdown. Uses EFS for persistent world storage.
+Minecraft server on AWS ECS (Fargate) with three sidecar components:
+Discord bot for remote management, `ecs-dns-updater` for dynamic IP
+(shared image, see Related Repositories), and idle watcher for
+auto-shutdown. Uses EFS for persistent world storage.
 
 ## Important: Multi-Component Repo
 
-This repo builds 3 separate Docker images from a shared Python monorepo:
+This repo builds 2 Docker images from a shared Python monorepo:
 - `mc-discord-bot` — Discord bot for server control (`src/minecraft_tools/discord_bot/`)
-- `mc-dns-updater` — Updates Cloudflare DNS when server IP changes (`src/minecraft_tools/dns_updater/`)
 - `mc-idle-watcher` — Monitors player count, stops server when idle (`src/minecraft_tools/idle_watcher/`)
 
-Each has its own Dockerfile in `docker/`, its own workflow, and its own GHCR image. They share a reusable workflow (`build-component.yml`) for test → build → multi-arch manifest.
+DNS updates use `ghcr.io/melvyndekort/ecs-dns-updater` — a third-party
+(same-owner) generic sidecar, not built from this repo. It was extracted
+from here (originally `mc-dns-updater`) into its own repo so hermes-agent
+could reuse it instead of each repo maintaining its own DNS-update
+mechanism. See `terraform/minecraft.tf` for how it's wired in.
+
+Each of the 2 remaining components has its own Dockerfile in `docker/`,
+its own workflow, and its own GHCR image. They share a reusable workflow
+(`build-component.yml`) for test → build → multi-arch manifest.
 
 ## Repository Structure
 
@@ -46,5 +56,7 @@ This repo has a project-scoped `cloudflare` MCP server (`.mcp.json`) — see `~/
 
 ## Related Repositories
 
+- `~/src/melvyndekort/ecs-dns-updater` — shared sidecar image used for
+  Cloudflare DNS updates (extracted from this repo's old `mc-dns-updater`)
 - `~/src/melvyndekort/tf-cloudflare` — DNS records for the Minecraft server
 - `~/src/melvyndekort/tf-aws` — AWS account and networking

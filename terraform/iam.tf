@@ -44,7 +44,7 @@ data "aws_iam_policy_document" "ecs_ssm_access" {
     resources = ["*"]
   }
 
-  # mc-dns-updater permissions
+  # ecs-dns-updater sidecar permissions
   statement {
     effect = "Allow"
     actions = [

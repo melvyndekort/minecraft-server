@@ -27,7 +27,6 @@ dev = [
 
 [project.scripts]
 discord-bot = "minecraft_tools.discord_bot.main:main"
-dns-updater = "minecraft_tools.dns_updater.main:main"
 idle-watcher = "minecraft_tools.idle_watcher.main:main"
 
 [tool.hatch.build.targets.wheel]
