@@ -38,45 +38,6 @@ class DiscordBotConfig:
 
 
 @dataclass
-class DNSUpdaterConfig:
-    """DNS updater configuration."""
-
-    cloudflare_token: str
-    zone_id: str
-    record_name: str
-    ecs_cluster: str
-    ecs_service: str
-
-    @classmethod
-    def from_env(cls) -> "DNSUpdaterConfig":
-        """Create config from environment variables."""
-        token = os.getenv("CLOUDFLARE_TOKEN")
-        zone_id = os.getenv("CLOUDFLARE_ZONE_ID")
-        record_name = os.getenv("DNS_RECORD_NAME")
-        cluster = os.getenv("ECS_CLUSTER")
-        service = os.getenv("ECS_SERVICE")
-
-        if not token:
-            raise ValueError("CLOUDFLARE_TOKEN environment variable is required")
-        if not zone_id:
-            raise ValueError("CLOUDFLARE_ZONE_ID environment variable is required")
-        if not record_name:
-            raise ValueError("DNS_RECORD_NAME environment variable is required")
-        if not cluster:
-            raise ValueError("ECS_CLUSTER environment variable is required")
-        if not service:
-            raise ValueError("ECS_SERVICE environment variable is required")
-
-        return cls(
-            cloudflare_token=token,
-            zone_id=zone_id,
-            record_name=record_name,
-            ecs_cluster=cluster,
-            ecs_service=service,
-        )
-
-
-@dataclass
 class IdleWatcherConfig:
     """Idle watcher configuration."""
 

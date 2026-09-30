@@ -127,17 +127,17 @@ resource "aws_ecs_task_definition" "minecraft" {
       }
     },
     {
-      name      = "mc-dns-updater"
-      image     = "ghcr.io/melvyndekort/mc-dns-updater:latest"
+      name      = "ecs-dns-updater"
+      image     = "ghcr.io/melvyndekort/ecs-dns-updater:latest"
       essential = false
       environment = [
         { name = "CLOUDFLARE_ZONE_ID", value = data.cloudflare_zone.zone.zone_id },
-        { name = "CLOUDFLARE_A_RECORD_ID", value = cloudflare_dns_record.minecraft_a.id },
-        { name = "CLOUDFLARE_AAAA_RECORD_ID", value = cloudflare_dns_record.minecraft_aaaa.id },
         { name = "DNS_RECORD_NAME", value = local.fqdn },
         { name = "ECS_CLUSTER", value = aws_ecs_cluster.minecraft.name },
         { name = "ECS_SERVICE", value = local.minecraft_service_name },
-        { name = "DNS_NAME", value = local.fqdn }
+        { name = "UPDATE_IPV4", value = "true" },
+        { name = "UPDATE_IPV6", value = "true" },
+        { name = "AWS_REGION", value = var.region },
       ]
       secrets = [
         {
@@ -150,7 +150,7 @@ resource "aws_ecs_task_definition" "minecraft" {
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.minecraft.name
           "awslogs-region"        = var.region
-          "awslogs-stream-prefix" = "mc-dns-updater"
+          "awslogs-stream-prefix" = "ecs-dns-updater"
         }
       }
     }

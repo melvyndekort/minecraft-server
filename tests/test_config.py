@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from minecraft_tools.config import DiscordBotConfig, DNSUpdaterConfig, IdleWatcherConfig
+from minecraft_tools.config import DiscordBotConfig, IdleWatcherConfig
 
 
 class TestDiscordBotConfig:
@@ -59,36 +59,6 @@ class TestDiscordBotConfig:
                 ValueError, match="ECS_CLUSTER environment variable is required"
             ):
                 DiscordBotConfig.from_env()
-
-
-class TestDNSUpdaterConfig:
-    """Test DNS updater configuration."""
-
-    def test_from_env_complete(self):
-        """Test configuration with all environment variables."""
-        env_vars = {
-            "CLOUDFLARE_TOKEN": "test_token",
-            "CLOUDFLARE_ZONE_ID": "test_zone",
-            "DNS_RECORD_NAME": "mc.example.com",
-            "ECS_CLUSTER": "test_cluster",
-            "ECS_SERVICE": "test_service",
-        }
-
-        with patch.dict(os.environ, env_vars):
-            config = DNSUpdaterConfig.from_env()
-
-        assert config.cloudflare_token == "test_token"
-        assert config.zone_id == "test_zone"
-        assert config.record_name == "mc.example.com"
-        assert config.ecs_cluster == "test_cluster"
-        assert config.ecs_service == "test_service"
-
-    def test_missing_token_raises_error(self):
-        """Test error when Cloudflare token is missing."""
-        with patch.dict(os.environ, {}, clear=True), pytest.raises(
-            ValueError, match="CLOUDFLARE_TOKEN environment variable is required"
-        ):
-            DNSUpdaterConfig.from_env()
 
 
 class TestIdleWatcherConfig:

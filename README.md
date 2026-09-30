@@ -121,7 +121,6 @@ minecraft-server/
 │   ├── tests/           # Unit tests
 │   ├── Dockerfile       # Container configuration
 │   └── docker-compose.yml
-├── mc-dns-updater/      # Dynamic DNS updater
 ├── mc-idle-watcher/     # Automatic server shutdown when idle
 └── .github/workflows/   # CI/CD pipelines
 ```
