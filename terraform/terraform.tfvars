@@ -1,4 +1,4 @@
-paper_version  = "LATEST"
+paper_version  = "26.2" # newest version every plugin supports (Geyser: Java 26.2 only); never LATEST
 dns_zone       = "dekort.dev"
 dns_record     = "mc"
 task_cpu       = 2048

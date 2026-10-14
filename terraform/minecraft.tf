@@ -11,16 +11,21 @@ resource "random_string" "random_password" {
 
 locals {
   minecraft_service_name = "minecraft-service"
+  # Every URL is immutable (version/build-number pinned) so a start never depends on a moving target.
+  # EssentialsX: released 2.22.0 only supports up to 26.1.2; the 2.x branch (Jenkins build 1832 = head of
+  # 2.x, includes "Update to Minecraft 26.3") is what lists 26.2/26.3. Pin by build NUMBER: the
+  # lastSuccessfulBuild path 404s as soon as a newer build exists (that is what broke the last start).
+  # Removed: BuildPaste (Bukkit build stopped at 1.21.11, 2025-12-17) and TreeCapitator 7.1 (api-version 1.13,
+  # unmaintained; replaced by TreeTimber).
   plugins = [
-    "https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsX-2.22.0-dev+53-9ad754b.jar",
-    "https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXSpawn-2.22.0-dev+53-9ad754b.jar",
-    "https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXChat-2.22.0-dev+53-9ad754b.jar",
-    "https://cdn.modrinth.com/data/fALzjamp/versions/P3y2MXnd/Chunky-Bukkit-1.4.40.jar",
-    "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot",
-    "https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot",
-    "https://mediafilez.forgecdn.net/files/6326/161/TreeCapitator7.1.jar",
-    "https://cdn.modrinth.com/data/9kNC5Mrh/versions/AbmlgpgV/BuildPastePlugin-1.16-1.21.10v2.02.jar",
-    "https://cdn.modrinth.com/data/Vebnzrzj/versions/OrIs0S6b/LuckPerms-Bukkit-5.5.17.jar",
+    "https://ci.ender.zone/job/EssentialsX/1832/artifact/jars/EssentialsX-2.22.1-dev+27-e70bdb8.jar",
+    "https://ci.ender.zone/job/EssentialsX/1832/artifact/jars/EssentialsXSpawn-2.22.1-dev+27-e70bdb8.jar",
+    "https://ci.ender.zone/job/EssentialsX/1832/artifact/jars/EssentialsXChat-2.22.1-dev+27-e70bdb8.jar",
+    "https://cdn.modrinth.com/data/fALzjamp/versions/MdY6JATr/Chunky-Bukkit-1.5.3.jar",
+    "https://download.geysermc.org/v2/projects/geyser/versions/2.11.3/builds/1253/downloads/spigot",
+    "https://download.geysermc.org/v2/projects/floodgate/versions/2.2.5/builds/141/downloads/spigot",
+    "https://cdn.modrinth.com/data/52W2RPUh/versions/SDM4TbVq/timber-1.8.6.jar",
+    "https://cdn.modrinth.com/data/Vebnzrzj/versions/b0mk8uS6/LuckPerms-Bukkit-5.5.71.jar",
   ]
 }
 
