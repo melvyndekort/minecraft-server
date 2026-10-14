@@ -19,10 +19,13 @@ class TestDiscordBotConfig:
             "ECS_SERVICE": "test_service",
             "AWS_ROLE_ARN": "arn:aws:iam::123:role/test",
             "AWS_DEFAULT_REGION": "us-east-1",
+            "DISCORD_CHANNEL_ID": "1559925749601927188",
         }
 
         with patch.dict(os.environ, env_vars):
             config = DiscordBotConfig.from_env()
+
+        assert config.channel_id == 1559925749601927188
 
         assert config.token == "test_token"
         assert config.ecs_cluster == "test_cluster"
@@ -44,6 +47,7 @@ class TestDiscordBotConfig:
         assert config.token == "test_token"
         assert config.aws_role_arn is None
         assert config.aws_region is None
+        assert config.channel_id is None
 
     def test_missing_token_raises_error(self):
         """Test error when token is missing."""

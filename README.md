@@ -101,10 +101,10 @@ docker-compose up -d
 
 Once the bot is running, use these slash commands in Discord:
 
-- `/server-start` - Start the Minecraft server
-- `/server-stop` - Stop the Minecraft server  
-- `/server-status` - Check current server status
-- `/help` - Show all available commands with descriptions
+- `/mc-start` - Start the Minecraft server
+- `/mc-stop` - Stop the Minecraft server  
+- `/mc-status` - Check current server status
+- `/mc-help` - Show all available commands with descriptions
 
 ## 📁 Project Structure
 
@@ -136,6 +136,7 @@ minecraft-server/
 | `ECS_SERVICE` | ECS service name | `minecraft-service` |
 | `AWS_ROLE_ARN` | IAM role for bot | `arn:aws:iam::123:role/mc-discord-bot-role` |
 | `AWS_DEFAULT_REGION` | AWS region | `us-east-1` |
+| `DISCORD_CHANNEL_ID` | Only accept commands from this channel (optional; unset = any channel) | `1559925749601927188` |
 
 ### Terraform Variables
 

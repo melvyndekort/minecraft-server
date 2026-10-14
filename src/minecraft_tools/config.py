@@ -13,6 +13,7 @@ class DiscordBotConfig:
     ecs_service: str
     aws_role_arn: str | None = None
     aws_region: str | None = None
+    channel_id: int | None = None  # restrict commands to this channel
 
     @classmethod
     def from_env(cls) -> "DiscordBotConfig":
@@ -28,12 +29,15 @@ class DiscordBotConfig:
         if not service:
             raise ValueError("ECS_SERVICE environment variable is required")
 
+        channel_id = os.getenv("DISCORD_CHANNEL_ID")
+
         return cls(
             token=token,
             ecs_cluster=cluster,
             ecs_service=service,
             aws_role_arn=os.getenv("AWS_ROLE_ARN"),
             aws_region=os.getenv("AWS_DEFAULT_REGION"),
+            channel_id=int(channel_id) if channel_id else None,
         )
 
 
