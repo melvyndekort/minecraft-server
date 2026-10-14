@@ -24,6 +24,39 @@ class TestDiscordBot:
             assert bot is not None
             assert hasattr(bot, 'tree')
 
+    def test_command_names_prefixed(self):
+        """All slash commands start with mc-."""
+        config = DiscordBotConfig(
+            token="t", ecs_cluster="c", ecs_service="s", channel_id=42
+        )
+        with patch('minecraft_tools.discord_bot.main.boto3.client'):
+            bot = create_bot(config)
+        names = {c.name for c in bot.tree.get_commands()}
+        assert names == {"mc-start", "mc-stop", "mc-status", "mc-help"}
+
+    @pytest.mark.asyncio
+    async def test_channel_restriction(self):
+        """Commands are accepted only in the configured channel."""
+        config = DiscordBotConfig(
+            token="t", ecs_cluster="c", ecs_service="s", channel_id=42
+        )
+        with patch('minecraft_tools.discord_bot.main.boto3.client'):
+            bot = create_bot(config)
+        right = MagicMock(channel_id=42)
+        wrong = MagicMock(channel_id=7)
+        wrong.response.send_message = AsyncMock()
+        assert await bot.tree.interaction_check(right) is True
+        assert await bot.tree.interaction_check(wrong) is False
+        wrong.response.send_message.assert_awaited_once()
+        assert wrong.response.send_message.call_args.kwargs["ephemeral"] is True
+
+    @pytest.mark.asyncio
+    async def test_no_channel_restriction_by_default(self):
+        config = DiscordBotConfig(token="t", ecs_cluster="c", ecs_service="s")
+        with patch('minecraft_tools.discord_bot.main.boto3.client'):
+            bot = create_bot(config)
+        assert await bot.tree.interaction_check(MagicMock(channel_id=7)) is True
+
     @pytest.mark.asyncio
     async def test_get_service_status_running(self):
         """Test getting service status when running."""

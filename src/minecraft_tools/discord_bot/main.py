@@ -7,6 +7,7 @@ from typing import Any
 import boto3
 import discord
 from botocore.exceptions import ClientError
+from discord import app_commands
 from discord.ext import commands
 
 from minecraft_tools.config import DiscordBotConfig
@@ -145,33 +146,63 @@ async def update_service(
         await interaction.response.send_message(f"❌ Error updating service: {e}")
 
 
+class ChannelRestrictedTree(app_commands.CommandTree):
+    """Command tree that only accepts commands from one channel (if configured)."""
+
+    channel_id: int | None = None
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if self.channel_id is None or interaction.channel_id == self.channel_id:
+            return True
+        logger.warning(
+            f"Ignoring command from {interaction.user.name} in channel "
+            f"{interaction.channel_id} (allowed: {self.channel_id})"
+        )
+        await interaction.response.send_message(
+            f"❌ Use this bot in <#{self.channel_id}>.", ephemeral=True
+        )
+        return False
+
+
 def create_bot(config: DiscordBotConfig) -> commands.Bot:
     """Create and configure the Discord bot."""
     intents = discord.Intents.default()
     intents.message_content = (
         False  # Disable privileged intent - not needed for slash commands
     )
-    bot = commands.Bot(command_prefix="!", intents=intents)
+    bot = commands.Bot(
+        command_prefix="!", intents=intents, tree_cls=ChannelRestrictedTree
+    )
+    assert isinstance(bot.tree, ChannelRestrictedTree)
+    bot.tree.channel_id = config.channel_id
+
+    @bot.tree.error
+    async def on_tree_error(
+        interaction: discord.Interaction, error: app_commands.AppCommandError
+    ) -> None:
+        # Wrong-channel rejections are already answered in interaction_check
+        if not isinstance(error, app_commands.CheckFailure):
+            logger.error(f"Command error: {error}")
 
     # Initialize AWS clients
     ecs_client = boto3.client("ecs")
     ec2_client = boto3.client("ec2")
 
-    @bot.tree.command(name="server-start", description="Scale ECS service to 1 task")
+    @bot.tree.command(name="mc-start", description="Scale ECS service to 1 task")
     async def server_start(interaction: discord.Interaction) -> None:
         logger.info(f"Server start command invoked by {interaction.user.name}")
         await update_service(
             interaction, ecs_client, config.ecs_cluster, config.ecs_service, 1
         )
 
-    @bot.tree.command(name="server-stop", description="Scale ECS service to 0 tasks")
+    @bot.tree.command(name="mc-stop", description="Scale ECS service to 0 tasks")
     async def server_stop(interaction: discord.Interaction) -> None:
         logger.info(f"Server stop command invoked by {interaction.user.name}")
         await update_service(
             interaction, ecs_client, config.ecs_cluster, config.ecs_service, 0
         )
 
-    @bot.tree.command(name="server-status", description="Check ECS service status")
+    @bot.tree.command(name="mc-status", description="Check ECS service status")
     async def server_status(interaction: discord.Interaction) -> None:
         logger.info(f"Server status command invoked by {interaction.user.name}")
         try:
@@ -195,15 +226,15 @@ def create_bot(config: DiscordBotConfig) -> commands.Bot:
             logger.error(f"Error getting service status: {e}")
             await interaction.response.send_message(f"❌ Error getting status: {e}")
 
-    @bot.tree.command(name="help", description="Show available commands")
+    @bot.tree.command(name="mc-help", description="Show available commands")
     async def help_command(interaction: discord.Interaction) -> None:
         help_text = """
 🎮 **Minecraft Server Bot Commands**
 
-`/server-start` - Start the Minecraft server (scale to 1 task)
-`/server-stop` - Stop the Minecraft server (scale to 0 tasks)
-`/server-status` - Check current server status and IP addresses
-`/help` - Show this help message
+`/mc-start` - Start the Minecraft server (scale to 1 task)
+`/mc-stop` - Stop the Minecraft server (scale to 0 tasks)
+`/mc-status` - Check current server status and IP addresses
+`/mc-help` - Show this help message
 
 The server runs on AWS ECS Fargate and may take a few minutes to start up.
         """
