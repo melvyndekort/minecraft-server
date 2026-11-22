@@ -12,3 +12,9 @@ variable "dns_record" {
   description = "DNS record (e.g. mc.example.com)"
   type        = string
 }
+
+variable "discord_channel_id" {
+  description = "Restrict Discord bot commands to this channel ID. Empty = no restriction."
+  type        = string
+  default     = ""
+}
