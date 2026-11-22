@@ -1,108 +1,105 @@
 # minecraft-server
 
-A scalable Minecraft server infrastructure on AWS ECS with Discord bot integration for remote server management.
+A Minecraft server on AWS ECS Fargate with a Lambda-based Discord bot for
+remote server management, in its own AWS account.
 
 ## 🎮 Features
 
-- **Serverless Minecraft Server**: Runs on AWS ECS Fargate with automatic scaling
-- **Discord Bot Integration**: Start, stop, and check server status via Discord commands
+- **Serverless Minecraft Server**: Runs on AWS ECS Fargate, off by default
+- **Discord Bot Integration**: Start, stop, and check server status via
+  Discord slash commands, handled by a Lambda behind Discord's
+  Interactions webhook (no standing bot process, no static IAM credential)
 - **Dynamic DNS**: Automatic IP updates via Cloudflare DNS
 - **Idle Monitoring**: Automatic server shutdown when no players are online
 - **Persistent Storage**: EFS-backed world data that persists across restarts
-- **Cost Optimized**: Pay only when the server is running
+- **Cost Optimized**: Pay only when the server is running (Fargate Spot,
+  `desired_count = 0` by default)
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Discord Bot   │───▶│   AWS ECS Task   │───▶│  Minecraft      │
-│   (Commands)    │    │   (Fargate)      │    │  Server         │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │                        │
-                                ▼                        ▼
-                       ┌──────────────────┐    ┌─────────────────┐
-                       │   DNS Updater    │    │   EFS Storage   │
-                       │   (Cloudflare)   │    │   (Persistent)  │
-                       └──────────────────┘    └─────────────────┘
+┌──────────────┐   HTTPS    ┌───────────────────┐   ECS API   ┌─────────────────┐
+│   Discord     │──────────▶│  Lambda            │────────────▶│   ECS Service   │
+│   (slash cmd) │           │  (discord_bot)      │             │   (Fargate)     │
+└──────────────┘            └───────────────────┘             └─────────────────┘
+                                                                        │
+                                                        ┌───────────────┼────────────────┐
+                                                        ▼               ▼                ▼
+                                                 Minecraft task   mc-idle-watcher   ecs-dns-updater
+                                                 (EFS-backed)     (auto-shutdown)   (Cloudflare DNS)
 ```
+
+Everything lives in its own AWS subaccount (`minecraft-server`), separate
+from the management account.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- AWS CLI configured with appropriate permissions
+- AWS CLI configured with a session for the `minecraft-server` account
 - Terraform >= 1.0
-- Docker and Docker Compose
 - Cloudflare account with API token
-- Discord bot token
+- A Discord Application (bot token + public key + application ID)
 
-### 1. Bootstrap (One-time Setup)
-
-```bash
-# Setup GitHub Actions OIDC role
-cd bootstrap
-terraform init
-terraform apply
-
-# Copy the output role ARN to GitHub repository secrets as AWS_ROLE_ARN
-```
-
-### 2. Configure Secrets
+### 1. Configure Secrets
 
 ```bash
-# Create and edit secrets file
-cp terraform/secrets.yaml.example terraform/secrets.yaml
-# Edit terraform/secrets.yaml with your Discord webhook URL
+cp terraform/secrets.yaml terraform/secrets.yaml   # start from the decrypted file if you have one
+# edit terraform/secrets.yaml: discord.public_key, discord.application_id,
+# discord.bot_token, discord.webhook_url, cloudflare token
 
-# Encrypt the secrets file
 make encrypt
 ```
 
-### 3. Deploy Infrastructure
+### 2. Deploy Infrastructure
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd minecraft-server
-
-# Configure variables
-cp terraform/terraform.tfvars.example terraform/terraform.tfvars
-# Edit terraform/terraform.tfvars with your values
-
-# Deploy infrastructure
 cd terraform
 terraform init
 terraform plan
 terraform apply
 ```
 
-### 4. Setup Discord Bot
+This creates the VPC, ECS cluster/service/task definition, EFS filesystem,
+SSM parameters, the Discord bot Lambda (with a placeholder handler), and
+its Function URL.
+
+### 3. Deploy the real Lambda code
+
+The Terraform apply only wires up the Lambda infrastructure; `main`
+pushes going forward deploy the real handler automatically via
+`.github/workflows/mc-discord-bot-lambda.yml`. For a first manual deploy:
 
 ```bash
-cd mc-discord-bot
+make deploy
+```
 
-# Create environment file
-cat > .env << EOF
-DISCORD_TOKEN=your_discord_bot_token_here
-ECS_CLUSTER=your_ecs_cluster_name
-ECS_SERVICE=your_ecs_service_name
-AWS_ROLE_ARN=arn:aws:iam::123456789012:role/YourBotRole
-AWS_DEFAULT_REGION=eu-west-1
-AWS_CREDENTIALS_PATH=/path/to/your/aws/credentials
-EOF
+### 4. Register Discord commands and the Interactions endpoint
 
-# Edit .env with your actual values
+One-time setup in the Discord Developer Portal:
 
-# Run the bot
-docker-compose up -d
+1. Paste the `discord_bot_function_url` Terraform output into the
+   application's **Interactions Endpoint URL**.
+2. Register the slash commands (needs your bot token, run locally — not
+   something to automate with AWS credentials):
+
+```bash
+curl -sS -X PUT \
+  "https://discord.com/api/v10/applications/${DISCORD_APPLICATION_ID}/commands" \
+  -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {"name": "mc-start", "description": "Start the Minecraft server"},
+    {"name": "mc-stop", "description": "Stop the Minecraft server"},
+    {"name": "mc-status", "description": "Check server status and IP addresses"},
+    {"name": "mc-help", "description": "Show bot help"}
+  ]'
 ```
 
 ### 5. Discord Commands
 
-Once the bot is running, use these slash commands in Discord:
-
 - `/mc-start` - Start the Minecraft server
-- `/mc-stop` - Stop the Minecraft server  
+- `/mc-stop` - Stop the Minecraft server
 - `/mc-status` - Check current server status
 - `/mc-help` - Show all available commands with descriptions
 
@@ -110,78 +107,59 @@ Once the bot is running, use these slash commands in Discord:
 
 ```
 minecraft-server/
-├── bootstrap/           # One-time GitHub Actions OIDC setup
-│   ├── github-oidc-role.tf
-│   └── providers.tf
-├── terraform/           # Main infrastructure code
-│   ├── *.tf            # Terraform configuration files
-│   └── terraform.tfvars # Configuration variables
-├── mc-discord-bot/       # Discord bot for server management
-│   ├── src/bot.py       # Bot implementation
-│   ├── tests/           # Unit tests
-│   ├── Dockerfile       # Container configuration
-│   └── docker-compose.yml
-├── mc-idle-watcher/     # Automatic server shutdown when idle
-└── .github/workflows/   # CI/CD pipelines
+├── terraform/             # ECS cluster, service, task def, EFS, VPC, DNS, IAM, Lambda
+├── src/minecraft_tools/
+│   ├── discord_bot/       # Lambda handler for Discord Interactions
+│   └── idle_watcher/      # Sidecar: stops the server when idle
+├── docker/                # idle-watcher.Dockerfile (only Docker image this repo builds)
+├── tests/
+├── Makefile                # decrypt/encrypt, package/deploy, start/stop/restart, exec
+└── .github/workflows/
 ```
+
+DNS updates use `ghcr.io/melvyndekort/ecs-dns-updater`, a shared sidecar
+image maintained in its own repo, not built here.
 
 ## ⚙️ Configuration
 
-### Environment Variables
+### Discord bot Lambda environment (set via Terraform secrets)
 
-| Variable | Description | Example |
-|----------|-------------|----------|
-| `DISCORD_TOKEN` | Discord bot token | `MTQx...` |
-| `ECS_CLUSTER` | ECS cluster name | `minecraft-cluster` |
-| `ECS_SERVICE` | ECS service name | `minecraft-service` |
-| `AWS_ROLE_ARN` | IAM role for bot | `arn:aws:iam::123:role/mc-discord-bot-role` |
-| `AWS_DEFAULT_REGION` | AWS region | `us-east-1` |
-| `DISCORD_CHANNEL_ID` | Only accept commands from this channel (optional; unset = any channel) | `1559925749601927188` |
+| Variable | Description |
+|----------|-------------|
+| `DISCORD_PUBLIC_KEY` | Used to verify Discord's Ed25519 request signatures |
+| `DISCORD_APPLICATION_ID` | Discord application ID |
+| `DISCORD_CHANNEL_ID` | Restrict commands to this channel (optional) |
+| `ECS_CLUSTER` / `ECS_SERVICE` | Wired automatically to the real Terraform resources |
 
 ### Terraform Variables
 
 Key variables in `terraform/terraform.tfvars`:
 
 ```hcl
-region = "us-east-1"
-dns_zone = "example.com"
-dns_record = "minecraft"
-task_cpu = 2048
-task_memory = 4096
+region        = "eu-west-1"
+dns_zone      = "dekort.dev"
+dns_record    = "mc"
+paper_version = "26.2"
+task_cpu      = 2048
+task_memory   = 4096
 desired_count = 0  # Start with server stopped
-
-# Temporary EC2 for EFS access
-create_temp_ec2 = false
-ec2_key_name = "your-key-pair-name"
 ```
 
 ## 🔒 Security
 
-- Discord bot uses IAM role assumption with minimal ECS permissions
+- No standing Discord bot process, no static IAM access key — the Lambda
+  is invoked directly by Discord and verifies each request's Ed25519
+  signature before doing anything
 - EFS encryption at rest and in transit
-- Security groups restrict access to Minecraft port only
-- Secrets managed via AWS SSM Parameter Store
+- Security groups restrict access to the Minecraft/Geyser ports only
+- Secrets managed via AWS SSM Parameter Store / KMS-encrypted Terraform secrets
 
 ## 💰 Cost Optimization
 
-- Server runs only when needed (desired_count = 0 by default)
-- Fargate Spot pricing for cost savings
-- EFS Intelligent Tiering for storage optimization
+- Server runs only when needed (`desired_count = 0` by default)
+- Fargate Spot pricing
 - CloudWatch logs with 7-day retention
-
-## 📂 EFS File Access
-
-To upload files to the EFS filesystem, enable a temporary EC2 instance:
-
-```bash
-# Create temporary EC2 instance
-make temp-ec2
-
-# SSH to the instance
-make ssh
-```
-
-EFS is mounted at `/mnt/efs`. When done, destroy the temporary instance with `make apply`.
+- Lambda bot only runs (and costs anything) when invoked
 
 ## 🔧 Container Access
 
@@ -195,66 +173,37 @@ This opens an interactive shell in the Minecraft container. The server must be r
 
 ## 🎮 Server Management
 
-You can manage the Minecraft server directly via command line:
+You can manage the Minecraft server directly via command line, as an
+alternative to the Discord bot:
 
 ```bash
-# Start the server
 make start
-
-# Stop the server
 make stop
-
-# Restart the server (force new deployment)
-make restart
+make restart   # force new deployment
 ```
-
-These commands provide an alternative to Discord bot commands for server management.
 
 ## 🛠️ Development
 
-### Discord Bot Development
-
 ```bash
-cd mc-discord-bot
-
-# Install dependencies
-poetry install
-
-# Run tests
-poetry run pytest
-
-# Local development
-poetry run python src/bot.py
+make test
+make lint
+make format
+make type-check
+make dev-all     # all of the above
 ```
 
 ### Infrastructure Changes
 
 ```bash
 cd terraform
-
-# Plan changes
 terraform plan
-
-# Apply changes
 terraform apply
-
-# Destroy infrastructure
-terraform destroy
 ```
 
 ## 📊 Monitoring
 
-- CloudWatch logs for all services
-- Discord bot provides real-time status updates
+- CloudWatch logs: `/ecs/minecraft` and `/aws/lambda/minecraft-discord-bot`
 - ECS service metrics available in AWS Console
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
 
 ## 📝 License
 
@@ -262,24 +211,17 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🆘 Troubleshooting
 
-### Common Issues
-
-**Discord bot not responding:**
-- Check bot token is valid
-- Verify AWS credentials are configured
-- Check CloudWatch logs for errors
+**Discord bot not responding / "interactions endpoint could not be verified":**
+- Check `/aws/lambda/minecraft-discord-bot` CloudWatch logs for import or
+  runtime errors
+- Confirm `make deploy` actually ran (check the Lambda's `LastModified`) —
+  Terraform's apply only deploys a placeholder handler
 
 **Server won't start:**
-- Verify ECS service exists
-- Check IAM permissions
-- Review ECS task logs
+- Verify the ECS service exists and has a healthy task definition
+- Check IAM permissions on `ecsTaskExecutionRole-mc`
+- Review `/ecs/minecraft` task logs
 
 **DNS not updating:**
-- Verify Cloudflare API token
-- Check DNS record IDs in Terraform
-
-### Getting Help
-
-- Check CloudWatch logs: `/ecs/minecraft`
-- Review Discord bot logs: `docker-compose logs mc-discord-bot`
-- AWS ECS Console for service status
+- Verify the Cloudflare API token in SSM
+- Check `ecs-dns-updater` sidecar logs in `/ecs/minecraft`
