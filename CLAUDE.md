@@ -33,7 +33,7 @@ its own workflow, and its own GHCR image. They share a reusable workflow
 
 - `src/minecraft_tools/` — Shared Python package with 3 subpackages
 - `tests/` — Test suite for all components
-- `docker/` — Per-component Dockerfiles (`discord-bot.Dockerfile`, etc.)
+- `docker/` — Per-component Dockerfiles (`idle-watcher.Dockerfile`; the Discord bot moved to AWS Lambda, no Dockerfile)
 - `terraform/` — ECS cluster, service, task definition, EFS, networking, DNS, IAM
 - `.github/workflows/build-component.yml` — Reusable workflow (test → build → manifest)
 - `.github/workflows/mc-*.yml` — Per-component triggers calling the reusable workflow
