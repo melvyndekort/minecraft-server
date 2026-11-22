@@ -18,3 +18,24 @@ variable "discord_channel_id" {
   type        = string
   default     = ""
 }
+
+variable "task_cpu" {
+  type    = number
+  default = 1024
+}
+
+variable "task_memory" {
+  type    = number
+  default = 2048
+}
+
+variable "desired_count" {
+  description = "Default desired count for the ECS service. Set 0 to keep it off by default."
+  type        = number
+  default     = 0
+}
+
+variable "paper_version" {
+  description = "Minecraft Paper server version"
+  type        = string
+}
