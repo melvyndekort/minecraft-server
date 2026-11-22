@@ -1,0 +1,69 @@
+name: "Deploy mc-discord-bot Lambda"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/minecraft_tools/discord_bot/**'
+      - 'tests/test_discord_bot.py'
+      - 'tests/test_ecs_control.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/mc-discord-bot-lambda.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/minecraft_tools/discord_bot/**'
+      - 'tests/test_discord_bot.py'
+      - 'tests/test_ecs_control.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/mc-discord-bot-lambda.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.4.0
+        with:
+          version: "latest"
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync --extra dev
+      - name: Run tests
+        run: uv run pytest tests/test_discord_bot.py tests/test_ecs_control.py -v
+      - name: Build artifact
+        run: make -s package
+      - name: Archive lambda artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: discord-bot-lambda
+          path: discord-bot-lambda.zip
+          if-no-files-found: error
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: discord-bot-lambda
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      - name: Deploy Lambda
+        run: aws lambda update-function-code --function-name minecraft-discord-bot --zip-file fileb://discord-bot-lambda.zip
