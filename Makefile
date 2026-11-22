@@ -1,4 +1,4 @@
-.PHONY := clean_secrets decrypt encrypt exec ssh test lint format type-check coverage dev-all
+.PHONY := clean_secrets decrypt encrypt exec ssh test lint format type-check coverage dev-all package deploy
 
 # Development commands (using uv)
 test:
@@ -94,3 +94,17 @@ restart:
 		--output text \
 		--query 'service.serviceName'
 	@echo "Restarting Minecraft server..."
+
+# Discord bot Lambda packaging + deploy -- same pattern as aws-idc-pim's
+# Makefile. boto3 isn't bundled: it's already present in the Lambda Python
+# 3.12 runtime. handler="minecraft_tools.discord_bot.handler.lambda_handler"
+# requires the package at the zip's root, hence `cd src`.
+package:
+	@rm -f discord-bot-lambda.zip
+	@cd src && zip -r ../discord-bot-lambda.zip minecraft_tools -x "*__pycache__*"
+	@uv pip install --target build_deps --python 3.12 pynacl urllib3 >/dev/null
+	@cd build_deps && zip -r ../discord-bot-lambda.zip . -x "*.dist-info/*"
+	@rm -rf build_deps
+
+deploy: package check-aws
+	@aws lambda update-function-code --function-name minecraft-discord-bot --zip-file fileb://discord-bot-lambda.zip
