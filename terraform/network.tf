@@ -1,41 +1,18 @@
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
 resource "random_shuffle" "az" {
-  input        = data.aws_availability_zones.available.names
+  input        = module.vpc.azs
   result_count = 1
 }
 
 locals {
-  chosen_az = random_shuffle.az.result[0]
-}
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "is-default"
-    values = ["false"]
-  }
-}
-
-data "aws_subnet" "public" {
-  vpc_id = data.aws_vpc.vpc.id
-
-  filter {
-    name   = "availability-zone"
-    values = [local.chosen_az]
-  }
-
-  filter {
-    name   = "tag:Tier"
-    values = ["Public"]
-  }
+  chosen_az            = random_shuffle.az.result[0]
+  chosen_az_index      = index(module.vpc.azs, local.chosen_az)
+  chosen_public_subnet = module.vpc.public_subnets[local.chosen_az_index]
 }
 
 resource "aws_security_group" "minecraft" {
   name        = "minecraft-sg"
   description = "Security group for Minecraft ECS tasks"
-  vpc_id      = data.aws_vpc.vpc.id
+  vpc_id      = module.vpc.vpc_id
 
   egress {
     from_port        = 0
@@ -80,7 +57,7 @@ resource "aws_security_group" "minecraft" {
 resource "aws_security_group" "efs" {
   name        = "minecraft-efs-sg"
   description = "Security group for EFS access"
-  vpc_id      = data.aws_vpc.vpc.id
+  vpc_id      = module.vpc.vpc_id
 
   egress {
     from_port        = 0
