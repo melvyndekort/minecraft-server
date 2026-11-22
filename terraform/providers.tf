@@ -3,7 +3,7 @@ terraform {
 
   backend "s3" {
     bucket       = "mdekort-tfstate-805751386945"
-    key          = "tf-minecraft.tfstate"
+    key          = "minecraft-server.tfstate"
     region       = "eu-west-1"
     encrypt      = true
     use_lockfile = true
